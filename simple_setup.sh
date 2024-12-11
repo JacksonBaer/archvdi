@@ -10,7 +10,11 @@ USERNAME=vdiuser
 LOG_FILE="/var/log/thinclient_setup.log"
 
 log_event() {
-    echo "$(date) [$(hostname)] [User: $(whoami)]: $1" >> "$LOG_FILE"
+    if command -v hostname &> /dev/null; then
+        echo "$(date) [$(hostname)] [User: $(whoami)]: $1" >> "$LOG_FILE"
+    else
+        echo "$(date) [Unknown Host] [User: $(whoami)]: $1" >> "$LOG_FILE"
+    fi
 }
 
 # Ensure the log file exists
@@ -25,8 +29,11 @@ log_event "Starting Thin Client Setup script"
 if [ "$EUID" -ne 0 ]; then
     echo "Please run as root"
     log_event "User ID is $EUID. Exiting as not root."
-    exit
+    exit 1
 fi
+
+# Ensure required packages for hostname and Python
+sudo pacman -S --noconfirm inetutils python python-pip
 
 # Prompt for the Proxmox IP or DNS name
 read -p "Enter the Proxmox IP or DNS name: " PROXMOX_IP
@@ -61,19 +68,29 @@ sudo pacman -Syu --noconfirm
 # Install required packages
 log_event "Installing required dependencies..."
 echo "Installing required dependencies..."
-sudo pacman -S --noconfirm lxde lightdm lightdm-gtk-greeter python-pip virt-viewer zenity python-tk
+sudo pacman -S --noconfirm lxde lightdm lightdm-gtk-greeter python-pip virt-viewer zenity python-tk || \
+{ echo "Failed to install required packages. Exiting."; exit 1; }
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
-pip3 install proxmoxer "PySimpleGUI<5.0.0"
+if ! pip3 install proxmoxer "PySimpleGUI<5.0.0"; then
+    echo "Failed to install Python dependencies. Exiting."
+    log_event "Failed to install Python dependencies."
+    exit 1
+fi
 
 # Clone the repository and navigate into it
-echo "Cloning PVE-VDIClient repository..."
-log_event "Cloning PVE-VDIClient repository..."
-
-cd /home/vdiuser
-git clone https://github.com/joshpatten/PVE-VDIClient.git
-cd ./PVE-VDIClient || { echo "Failed to change directory to PVE-VDIClient"; exit 1; }
+REPO_DIR="/home/$USERNAME/PVE-VDIClient"
+if [ ! -d "$REPO_DIR" ]; then
+    echo "Cloning PVE-VDIClient repository..."
+    log_event "Cloning PVE-VDIClient repository..."
+    cd /home/$USERNAME
+    git clone https://github.com/joshpatten/PVE-VDIClient.git
+else
+    echo "Repository already exists. Skipping clone."
+    log_event "Repository already exists. Skipping clone."
+fi
+cd "$REPO_DIR" || { echo "Failed to change directory to PVE-VDIClient"; exit 1; }
 
 # Make the script executable
 echo "Making vdiclient.py executable..."
@@ -106,53 +123,48 @@ sudo cp vdiclient.py /usr/local/bin/vdiclient
 
 # Create thinclient script
 echo "Creating thinclient script..."
-touch /home/vdiuser/thinclient
-
-cat <<'EOL' > /home/vdiuser/thinclient
+cat <<'EOL' > /home/$USERNAME/thinclient
 #!/bin/bash
 cd ~/PVE-VDIClient
 while true; do
     /usr/bin/python3 ~/PVE-VDIClient/vdiclient.py
 done
 EOL
-
-chmod +x /home/vdiuser/thinclient
+chmod +x /home/$USERNAME/thinclient
 
 # Configure LightDM for autologin and LXDE
 LIGHTDM_CONF="/etc/lightdm/lightdm.conf"
 
 echo "Configuring LightDM for autologin and LXDE session..."
-log_event "Configuring LightDM autologin for vdiuser with LXDE session."
+log_event "Configuring LightDM autologin for $USERNAME with LXDE session."
 
 {
   echo "[Seat:*]"
-  echo "autologin-user=vdiuser"
+  echo "autologin-user=$USERNAME"
   echo "autologin-user-timeout=0"
   echo "xserver-command=X -s 0 -dpms"
   echo "user-session=lxde"  # Specifies LXDE as the session
 } >"$LIGHTDM_CONF"
 
 if [ $? -eq 0 ]; then
-    echo "LightDM autologin configured successfully for vdiuser with LXDE."
-    log_event "LightDM autologin configured successfully for vdiuser with LXDE."
+    echo "LightDM autologin configured successfully for $USERNAME with LXDE."
+    log_event "LightDM autologin configured successfully for $USERNAME with LXDE."
 else
     echo "Failed to configure LightDM autologin with LXDE."
     exit 1
 fi
 
 # Add the script to autostart
-AUTOSTART_DIR="/home/vdiuser/.config/autostart"
+AUTOSTART_DIR="/home/$USERNAME/.config/autostart"
 mkdir -p "$AUTOSTART_DIR"
 echo "[Desktop Entry]
 Type=Application
-Exec=/home/vdiuser/thinclient
+Exec=/home/$USERNAME/thinclient
 Hidden=false
 NoDisplay=false
-Name[en_US]=Thin Client
 Name=Thin Client
-Comment[en_US]=Starts Thin Client
-Comment=Starts Thin Client" > "$AUTOSTART_DIR/thinclient.desktop"
+Comment=Starts Thin Client Application" > "$AUTOSTART_DIR/thinclient.desktop"
 
 # Restart system for changes to take effect
 log_event "Rebooting System to Apply Changes"
-
+sudo reboot
