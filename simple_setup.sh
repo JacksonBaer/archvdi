@@ -73,7 +73,7 @@ sudo pacman -S --noconfirm lxde lightdm lightdm-gtk-greeter python-pip virt-view
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
-if ! pip3 install proxmoxer "PySimpleGUI<5.0.0"; then
+if ! pip3 install proxmoxer "PySimpleGUI<5.0.0" --break-system-packages; then
     echo "Failed to install Python dependencies. Exiting."
     log_event "Failed to install Python dependencies."
     exit 1
