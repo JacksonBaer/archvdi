@@ -89,7 +89,7 @@ sudo pacman -S --noconfirm gnome gdm python-pip virt-viewer zenity tk
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
-pip3 install proxmoxer "PySimpleGUI<5.0.0" --break-system-packages
+pip3 install proxmoxer requests "PySimpleGUI<5.0.0" --break-system-packages
 
 # Clone the repository and navigate into it
 echo "Cloning PVE-VDIClient repository..."
@@ -128,6 +128,7 @@ echo "Copying vdiclient.py to /usr/local/bin..."
 log_event "Copying vdiclient.py to /usr/local/bin..."
 sudo cp vdiclient.py /usr/local/bin/vdiclient
 
+
 # Create thinclient script
 echo "Creating thinclient script..."
 touch /home/vdiuser/thinclient
@@ -141,6 +142,22 @@ done
 EOL
 
 chmod +x /home/vdiuser/thinclient
+
+AUTOSTART_DIR="/home/vdiuser/.config/autostart"
+mkdir -p "$AUTOSTART_DIR"
+
+echo "[Desktop Entry]
+Type=Application
+Exec=/usr/local/bin/vdiclient
+Hidden=false
+NoDisplay=false
+Name=VDI Client
+Comment=Starts VDI Client Application" > "$AUTOSTART_DIR/vdiclient.desktop"
+
+# Ensure correct permissions for the autostart file
+chown vdiuser:vdiuser "$AUTOSTART_DIR/vdiclient.desktop"
+chmod +x "$AUTOSTART_DIR/vdiclient.desktop"
+log_event "VDI Client added to GNOME autostart."
 
 # Configure LightDM for autologin and LXDE
 GDM_CONF="/etc/gdm/custom.conf"
