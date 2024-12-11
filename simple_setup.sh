@@ -20,7 +20,31 @@ if [ ! -f "$LOG_FILE" ]; then
 fi
 
 log_event "Starting Thin Client Setup script"
+log_event() {
+    if command -v hostname &> /dev/null; then
+        echo "$(date) [$(hostname)] [User: $(whoami)]: $1" >> "$LOG_FILE"
+    else
+        echo "$(date) [Unknown Host] [User: $(whoami)]: $1" >> "$LOG_FILE"
+    fi
+}
 
+# Ensure the log file exists
+if [ ! -f "$LOG_FILE" ]; then
+    touch "$LOG_FILE"
+    log_event "Log file created."
+fi
+
+log_event "Starting Thin Client Setup script"
+
+# Ensure the script is run as root
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run as root"
+    log_event "User ID is $EUID. Exiting as not root."
+    exit 1
+fi
+
+# Ensure required packages for hostname and Python
+sudo pacman -S --noconfirm inetutils python python-pip
 # Ensure the script is run as root
 if [ "$EUID" -ne 0 ]; then
     echo "Please run as root"
@@ -61,11 +85,11 @@ sudo pacman -Syu --noconfirm
 # Install required packages
 log_event "Installing required dependencies..."
 echo "Installing required dependencies..."
-sudo pacman -S --noconfirm gnome gdm python-pip virt-viewer zenity python-tk
+sudo pacman -S --noconfirm gnome gdm python-pip virt-viewer zenity tk
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
-pip3 install proxmoxer "PySimpleGUI<5.0.0"
+pip3 install proxmoxer "PySimpleGUI<5.0.0" --break-system-packages
 
 # Clone the repository and navigate into it
 echo "Cloning PVE-VDIClient repository..."
