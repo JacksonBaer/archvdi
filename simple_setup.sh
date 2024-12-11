@@ -71,7 +71,7 @@ pip3 install proxmoxer "PySimpleGUI<5.0.0"
 echo "Cloning PVE-VDIClient repository..."
 log_event "Cloning PVE-VDIClient repository..."
 
-cd /home/$USERNAME
+cd /home/vdiuser
 git clone https://github.com/joshpatten/PVE-VDIClient.git
 cd ./PVE-VDIClient || { echo "Failed to change directory to PVE-VDIClient"; exit 1; }
 
@@ -106,9 +106,9 @@ sudo cp vdiclient.py /usr/local/bin/vdiclient
 
 # Create thinclient script
 echo "Creating thinclient script..."
-touch /home/$USERNAME/thinclient
+touch /home/vdiuser/thinclient
 
-cat <<'EOL' > /home/$USERNAME/thinclient
+cat <<'EOL' > /home/vdiuser/thinclient
 #!/bin/bash
 cd ~/PVE-VDIClient
 while true; do
@@ -116,36 +116,36 @@ while true; do
 done
 EOL
 
-chmod +x /home/$USERNAME/thinclient
+chmod +x /home/vdiuser/thinclient
 
 # Configure LightDM for autologin and LXDE
 LIGHTDM_CONF="/etc/lightdm/lightdm.conf"
 
 echo "Configuring LightDM for autologin and LXDE session..."
-log_event "Configuring LightDM autologin for $USERNAME with LXDE session."
+log_event "Configuring LightDM autologin for vdiuser with LXDE session."
 
 {
   echo "[Seat:*]"
-  echo "autologin-user=$USERNAME"
+  echo "autologin-user=vdiuser"
   echo "autologin-user-timeout=0"
   echo "xserver-command=X -s 0 -dpms"
   echo "user-session=lxde"  # Specifies LXDE as the session
 } >"$LIGHTDM_CONF"
 
 if [ $? -eq 0 ]; then
-    echo "LightDM autologin configured successfully for $USERNAME with LXDE."
-    log_event "LightDM autologin configured successfully for $USERNAME with LXDE."
+    echo "LightDM autologin configured successfully for vdiuser with LXDE."
+    log_event "LightDM autologin configured successfully for vdiuser with LXDE."
 else
     echo "Failed to configure LightDM autologin with LXDE."
     exit 1
 fi
 
 # Add the script to autostart
-AUTOSTART_DIR="/home/$USERNAME/.config/autostart"
+AUTOSTART_DIR="/home/vdiuser/.config/autostart"
 mkdir -p "$AUTOSTART_DIR"
 echo "[Desktop Entry]
 Type=Application
-Exec=/home/$USERNAME/thinclient
+Exec=/home/vdiuser/thinclient
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
