@@ -148,7 +148,6 @@ Type=Application
 Exec=/home/vdiuser/thinclient
 Hidden=false
 NoDisplay=false
-X-GNOME-Autostart-enabled=true
 Name[en_US]=Thin Client
 Name=Thin Client
 Comment[en_US]=Starts Thin Client
