@@ -68,7 +68,7 @@ sudo pacman -Syu --noconfirm
 # Install required packages
 log_event "Installing required dependencies..."
 echo "Installing required dependencies..."
-sudo pacman -S --noconfirm lxde lightdm lightdm-gtk-greeter python-pip virt-viewer zenity python-tk || \
+sudo pacman -S --noconfirm lxde lightdm lightdm-gtk-greeter python-pip virt-viewer zenity tk || \
 { echo "Failed to install required packages. Exiting."; exit 1; }
 
 # Install Python dependencies
