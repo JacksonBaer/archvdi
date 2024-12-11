@@ -1,5 +1,5 @@
 #!/bin/bash
-# Thin Client Setup for Arch Linux
+# Thin Client Setup for Arch Linux with LXDE
 # Author: Jackson Baer (Adapted for Arch by [Your Name])
 # Date: 27 Nov 2024
 
@@ -24,7 +24,7 @@ log_event "Starting Thin Client Setup script"
 # Ensure the script is run as root
 if [ "$EUID" -ne 0 ]; then
     echo "Please run as root"
-    log_event "User ID is $EUID. Exiting if not root."
+    log_event "User ID is $EUID. Exiting as not root."
     exit
 fi
 
@@ -61,7 +61,7 @@ sudo pacman -Syu --noconfirm
 # Install required packages
 log_event "Installing required dependencies..."
 echo "Installing required dependencies..."
-sudo pacman -S --noconfirm python-pip virt-viewer lightdm lightdm-gtk-greeter zenity python-tk
+sudo pacman -S --noconfirm lxde lightdm lightdm-gtk-greeter python-pip virt-viewer zenity python-tk
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
@@ -118,24 +118,25 @@ EOL
 
 chmod +x /home/$USERNAME/thinclient
 
-# Configure LightDM for autologin
+# Configure LightDM for autologin and LXDE
 LIGHTDM_CONF="/etc/lightdm/lightdm.conf"
 
-echo "Configuring LightDM for autologin..."
-log_event "Configuring LightDM autologin for $USERNAME"
+echo "Configuring LightDM for autologin and LXDE session..."
+log_event "Configuring LightDM autologin for $USERNAME with LXDE session."
 
 {
   echo "[Seat:*]"
   echo "autologin-user=$USERNAME"
   echo "autologin-user-timeout=0"
   echo "xserver-command=X -s 0 -dpms"
+  echo "user-session=lxde"  # Specifies LXDE as the session
 } >"$LIGHTDM_CONF"
 
 if [ $? -eq 0 ]; then
-    echo "LightDM autologin configured successfully for $USERNAME."
-    log_event "LightDM autologin configured successfully for $USERNAME."
+    echo "LightDM autologin configured successfully for $USERNAME with LXDE."
+    log_event "LightDM autologin configured successfully for $USERNAME with LXDE."
 else
-    echo "Failed to configure LightDM autologin."
+    echo "Failed to configure LightDM autologin with LXDE."
     exit 1
 fi
 
