@@ -155,4 +155,4 @@ Comment=Starts Thin Client" > "$AUTOSTART_DIR/thinclient.desktop"
 
 # Restart system for changes to take effect
 log_event "Rebooting System to Apply Changes"
-sudo reboot
+
